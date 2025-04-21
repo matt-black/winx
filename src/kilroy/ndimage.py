@@ -17,6 +17,7 @@ __all__ = [
     "median_filter",
     "percentile_filter",
     "rank_filter",
+    "uniform_filter",
 ]
 
 
@@ -30,6 +31,8 @@ def generic_filter(
     cval: Number = 0,
     origin: int | Sequence[int] = 0,
     axes: Optional[int | Sequence[int]] = None,
+    batch_size: Optional[int] = None,
+    window_strides: Optional[Sequence[int]] = None,
 ) -> Array:
     """generic_filter Calculate a multidimensional filter using the given function.
 
@@ -45,11 +48,12 @@ def generic_filter(
         cval (Number, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
         origin (int | Sequence[int], optional): Controls the placement of the filter on the input's elements. A value of 0 (the default) centers the filter over the pixel. Positive values shift the filter to the left. Negative values shift the filter to the right.
         axes (int | Sequence[int], optional): Axes of input array to filter along. If ``None``, the input is filtered along all axes.
+        batch_size (int, optional): Integer specifying the size of the batch for each step to execute in parallel. If specified, `jax.lax.map` will be used. If `None`, `jax.vmap` will be used. Defaults to `None`.
 
     Raises:
         ValueError: If ``size`` is specified as a sequence and the number of elements is not the same as the number of dimensions.
         ValueError: If any of the dimensions in ``size`` are even.
-        NotImplementedError: If ``footprint`` or ``axes`` is not ``None``.
+        NotImplementedError: If ``axes`` is not ``None``.
 
     Returns:
         Array: The filtered array.
@@ -78,6 +82,10 @@ def generic_filter(
             raise ValueError(
                 f"window must be odd in all dimensions, shape input was {size}"
             )
+    if window_strides is None:
+        window_strides = [
+            1,
+        ] * n_dim
     # make the window extraction function
     window_radii = [ws // 2 for ws in size]
     if footprint is None:
@@ -99,7 +107,10 @@ def generic_filter(
     # the coordinate, and applying the function to that window.
     coords = jnp.stack(
         jnp.meshgrid(
-            *[jnp.arange(r, s - r) for s, r in zip(x.shape, window_radii)],
+            *[
+                jnp.arange(r, s - r, strd)
+                for s, r, strd in zip(x.shape, window_radii, window_strides)
+            ],
             indexing="ij",
         ),
         axis=-1,
@@ -122,7 +133,12 @@ def generic_filter(
     def compose_fun(coord: Int[Array, " {n_dim}"]) -> Union[Array, Number]:
         return fun(get_window(coord))
 
-    return jax.vmap(compose_fun, 0, 0)(coords).reshape(out_shape)
+    if batch_size is None:
+        return jax.vmap(compose_fun, 0, 0)(coords).reshape(out_shape)
+    else:
+        return jax.lax.map(compose_fun, coords, batch_size=batch_size).reshape(
+            out_shape
+        )
 
 
 def median_filter(
@@ -134,9 +150,35 @@ def median_filter(
     cval: Number = 0,
     origin: int | Sequence[int] = 0,
     axes: Optional[int | Sequence[int]] = None,
+    batch_size: Optional[int] = None,
 ) -> Array:
+    """median_filter Compute a multidimensional median filter.
+
+    Args:
+        x (Array): The input array.
+        size (int | Sequence[int]): Shape that is taken from the input array at every element position to define the input to the filter function. If an integer, a square (cubic, etc.) window with that size in each dimension will be used.
+        footprint (Array, optional): A boolean array that delineates a window as well as which of the elements in that window gets passed to the filter function. If this is used, the values selected by the footprint are passed to ``fun`` as a 1-dimensional array. When ``footprint`` is given, ``size`` is ignored.
+        padding (str, optional): Either the strings 'same' or 'valid'. 'same' adds padding to produce the same output size as the input. 'valid' does no padding, so only elements where the window fits completely in the image will be evaluated. Defaults to 'same'.
+        mode (str, optional): Determines how the input array will be padded beyond its boundaries. Defaults to 'constant'. For valid values, see ``jax.numpy.pad``.
+        cval (Number, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
+        origin (int | Sequence[int], optional): Controls the placement of the filter on the input's elements. A value of 0 (the default) centers the filter over the pixel. Positive values shift the filter to the left. Negative values shift the filter to the right.
+        axes (int | Sequence[int], optional): Axes of input array to filter along. If ``None``, the input is filtered along all axes.
+        batch_size (int, optional): Integer specifying the size of the batch for each step to execute in parallel. If specified, `jax.lax.map` will be used. If `None`, `jax.vmap` will be used. Defaults to `None`.
+
+    Returns:
+        Array: Median-filtered array.
+    """
     return generic_filter(
-        x, jnp.median, size, footprint, padding, mode, cval, origin, axes
+        x,
+        jnp.median,
+        size,
+        footprint,
+        padding,
+        mode,
+        cval,
+        origin,
+        axes,
+        batch_size,
     )
 
 
@@ -150,10 +192,28 @@ def percentile_filter(
     cval: Number = 0,
     origin: int | Sequence[int] = 0,
     axes: Optional[int | Sequence[int]] = None,
+    batch_size: Optional[int] = None,
 ) -> Array:
+    """percentile_filter Compute a multidimensional percentile filter.
+
+    Args:
+        x (Array): The input array.
+        percentile (Union[Array, Number]): The percentile of the window to return at each position. Should contain integer or floating point values between 0 and 100.
+        size (int | Sequence[int]): Shape that is taken from the input array at every element position to define the input to the filter function. If an integer, a square (cubic, etc.) window with that size in each dimension will be used.
+        footprint (Array, optional): A boolean array that delineates a window as well as which of the elements in that window gets passed to the filter function. If this is used, the values selected by the footprint are passed to ``fun`` as a 1-dimensional array. When ``footprint`` is given, ``size`` is ignored.
+        padding (str, optional): Either the strings 'same' or 'valid'. 'same' adds padding to produce the same output size as the input. 'valid' does no padding, so only elements where the window fits completely in the image will be evaluated. Defaults to 'same'.
+        mode (str, optional): Determines how the input array will be padded beyond its boundaries. Defaults to 'constant'. For valid values, see ``jax.numpy.pad``.
+        cval (Number, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
+        origin (int | Sequence[int], optional): Controls the placement of the filter on the input's elements. A value of 0 (the default) centers the filter over the pixel. Positive values shift the filter to the left. Negative values shift the filter to the right.
+        axes (int | Sequence[int], optional): Axes of input array to filter along. If ``None``, the input is filtered along all axes.
+        batch_size (int, optional): Integer specifying the size of the batch for each step to execute in parallel. If specified, `jax.lax.map` will be used. If `None`, `jax.vmap` will be used. Defaults to `None`.
+
+    Returns:
+        Array: Percentile-filtered array.
+    """
     return generic_filter(
         x,
-        Partial(jnp.percentile, q=percentile),
+        Partial(jnp.percentile, q=percentile, method="nearest"),
         size,
         footprint,
         padding,
@@ -161,6 +221,7 @@ def percentile_filter(
         cval,
         origin,
         axes,
+        batch_size,
     )
 
 
@@ -179,7 +240,27 @@ def rank_filter(
     cval: Number = 0,
     origin: int | Sequence[int] = 0,
     axes: Optional[int | Sequence[int]] = None,
+    batch_size: Optional[int] = None,
 ) -> Array:
+    """rank_filter Compute a multidimensional rank filter.
+
+    Rank filtering takes a window of values, flattens the values, sorts them, and then selects the `rank`th element in the sorted array.
+
+    Args:
+        x (Array): The input array.
+        rank (int): The rank parameter. May be negative, which will select the `-nth` element in the intermediate sorted array.
+        size (int | Sequence[int]): Shape that is taken from the input array at every element position to define the input to the filter function. If an integer, a square (cubic, etc.) window with that size in each dimension will be used.
+        footprint (Array, optional): A boolean array that delineates a window as well as which of the elements in that window gets passed to the filter function. If this is used, the values selected by the footprint are passed to ``fun`` as a 1-dimensional array. When ``footprint`` is given, ``size`` is ignored.
+        padding (str, optional): Either the strings 'same' or 'valid'. 'same' adds padding to produce the same output size as the input. 'valid' does no padding, so only elements where the window fits completely in the image will be evaluated. Defaults to 'same'.
+        mode (str, optional): Determines how the input array will be padded beyond its boundaries. Defaults to 'constant'. For valid values, see ``jax.numpy.pad``.
+        cval (Number, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
+        origin (int | Sequence[int], optional): Controls the placement of the filter on the input's elements. A value of 0 (the default) centers the filter over the pixel. Positive values shift the filter to the left. Negative values shift the filter to the right.
+        axes (int | Sequence[int], optional): Axes of input array to filter along. If ``None``, the input is filtered along all axes.
+        batch_size (int, optional): Integer specifying the size of the batch for each step to execute in parallel. If specified, `jax.lax.map` will be used. If `None`, `jax.vmap` will be used. Defaults to `None`.
+
+    Returns:
+        Array: Rank-filtered array.
+    """
     return generic_filter(
         x,
         Partial(_rank, rank),
@@ -190,4 +271,46 @@ def rank_filter(
         cval,
         origin,
         axes,
+        batch_size,
+    )
+
+
+def uniform_filter(
+    x: Array,
+    size: int | Sequence[int],
+    footprint: Optional[Array] = None,
+    padding: str = "same",
+    mode: str = "constant",
+    cval: Number = 0,
+    origin: int | Sequence[int] = 0,
+    axes: Optional[int | Sequence[int]] = None,
+    batch_size: Optional[int] = None,
+) -> Array:
+    """uniform_filter Compute a multidimensional uniform (AKA "mean") filter.
+
+    Args:
+        x (Array): The input array.
+        size (int | Sequence[int]): Shape that is taken from the input array at every element position to define the input to the filter function. If an integer, a square (cubic, etc.) window with that size in each dimension will be used.
+        footprint (Array, optional): A boolean array that delineates a window as well as which of the elements in that window gets passed to the filter function. If this is used, the values selected by the footprint are passed to ``fun`` as a 1-dimensional array. When ``footprint`` is given, ``size`` is ignored.
+        padding (str, optional): Either the strings 'same' or 'valid'. 'same' adds padding to produce the same output size as the input. 'valid' does no padding, so only elements where the window fits completely in the image will be evaluated. Defaults to 'same'.
+        mode (str, optional): Determines how the input array will be padded beyond its boundaries. Defaults to 'constant'. For valid values, see ``jax.numpy.pad``.
+        cval (Number, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
+        origin (int | Sequence[int], optional): Controls the placement of the filter on the input's elements. A value of 0 (the default) centers the filter over the pixel. Positive values shift the filter to the left. Negative values shift the filter to the right.
+        axes (int | Sequence[int], optional): Axes of input array to filter along. If ``None``, the input is filtered along all axes.
+        batch_size (int, optional): Integer specifying the size of the batch for each step to execute in parallel. If specified, `jax.lax.map` will be used. If `None`, `jax.vmap` will be used. Defaults to `None`.
+
+    Returns:
+        Array: Uniform-filtered array.
+    """
+    return generic_filter(
+        x,
+        jnp.mean,
+        size,
+        footprint,
+        padding,
+        mode,
+        cval,
+        origin,
+        axes,
+        batch_size,
     )

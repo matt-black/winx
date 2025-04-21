@@ -1,14 +1,15 @@
-"""testing suite for the ndimage api"""
+"""testing suite for the ndimage `generic_filter` function
+
+tests basic functionality/correctness of filtering coordinates, etc.
+"""
 
 import jax
 import jax.numpy as jnp
 import jax.random as jr
-import numpy
+from jax.tree_util import Partial
 from jaxtyping import Array
-from scipy import ndimage as ndi
-from scipy.datasets import ascent
 
-from kilroy.ndimage import generic_filter, median_filter
+from kilroy.ndimage import generic_filter
 
 jax.config.update("jax_platform_name", "cpu")
 
@@ -41,12 +42,14 @@ def test_footprint():
     fp = jnp.zeros((3, 3)).at[1, 1].set(1).astype(jnp.bool)
     y = generic_filter(x, window_identity, 3, fp, "valid", "constant", 0)
     z = generic_filter(x, identity, 3, None, "valid", "constant", 0)
-    assert jnp.allclose(y, z)
+    assert jnp.allclose(y, z).item()
 
 
-def test_median_same():
-    a = ascent().astype(numpy.float32)
-    sc = ndi.median_filter(a, 3, None, None, "constant", cval=0)
-    my = median_filter(jnp.asarray(a), 3, None, "same", "constant", cval=0)
-    my = numpy.asarray(my)
-    assert numpy.allclose(sc, my)
+def test_vmap_map_match():
+    x = jr.normal(jr.key(10), (5, 5))
+    fun = Partial(
+        generic_filter, x, identity, 3, None, "valid", mode="constant", cval=0
+    )
+    y = fun(batch_size=None)
+    z = fun(batch_size=2)
+    assert jnp.allclose(y, z).item()
