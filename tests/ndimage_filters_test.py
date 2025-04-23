@@ -4,7 +4,6 @@ tests that our implementations of the filter return the same results as those gi
 """
 
 import jax
-import jax.numpy as jnp
 import numpy
 from jaxtyping import Array
 from scipy import ndimage as ndi
@@ -28,8 +27,8 @@ def window_identity(x: Array) -> Array:
 
 
 def test_median_same():
-    sc = ndi.median_filter(_a, 3, None, None, "constant", cval=0)
-    my = median_filter(jnp.asarray(_a), 3, None, "same", "constant", cval=0)
+    sc = ndi.median_filter(_a, 3, None, None, "constant", 0)
+    my = median_filter(_a, 3, None, "constant", 0)
     my = numpy.asarray(my)
     assert numpy.allclose(sc, my)
 
@@ -49,7 +48,7 @@ def test_median_same():
 
 
 def test_uniform_same():
-    sc = ndi.uniform_filter(_a, 3, None, "constant", cval=0)
-    my = uniform_filter(_a, 3, None, "same", "constant", 0)
+    sc = ndi.uniform_filter(_a, 3, None, "constant", 0)
+    my = uniform_filter(_a, 3, None, "constant", 0)
     my = numpy.asarray(my)
     assert numpy.allclose(sc, my)
