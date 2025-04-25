@@ -2,11 +2,10 @@
 name = "kilroy"
 version = "0.1.0"
 description = "N-dimensional filtering in JAX."
-authors = [
-    {name = "Matt Black",email = "matt.black7@gmail.com"}
-]
+authors = [{ name = "Matt Black", email = "matt.black7@gmail.com" }]
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 keywords = ["jax"]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
@@ -19,32 +18,41 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering :: Image Processing",
     "Topic :: Scientific/Engineering :: Information Analysis",
-    "Topic :: Scientific/Engineering :: Mathematics"
+    "Topic :: Scientific/Engineering :: Mathematics",
 ]
-requires-python = ">=3.11,<4.0"
 dependencies = [
     "jax (>=0.6.0,<0.7.0)",
-    "jaxtyping (>=0.3.1,<0.4.0)"
+    "jaxtyping (>=0.3.1,<0.4.0)",
 ]
 
-[tool.poetry]
-packages = [{include = "kilroy", from = "src"}]
+[dependency-groups]
+dev = [
+    "black>=25.1.0,<26",
+    "mkdocs>=1.6.1,<2",
+    "darglint>=1.8.1,<2",
+    "flake8>=7.2.0,<8",
+    "isort>=6.0.1,<7",
+    "mypy>=1.15.0,<2",
+    "pyupgrade>=3.19.1,<4",
+    "typeguard>=4.4.2,<5",
+    "pre-commit>=4.2.0,<5",
+    "pre-commit-hooks>=5.0.0,<6",
+    "pytest>=8.3.5,<9",
+    "pooch>=1.8.2,<2",
+    "mkdocstrings-python>=1.16.10,<2",
+    "mkdocs-material>=9.6.12,<10",
+    "ipykernel>=6.29.5,<7",
+]
 
+[tool.hatch.build.targets.sdist]
+include = ["src/kilroy"]
 
-[tool.poetry.group.dev.dependencies]
-black = "^25.1.0"
-mkdocs = "^1.6.1"
-darglint = "^1.8.1"
-flake8 = "^7.2.0"
-isort = "^6.0.1"
-mypy = "^1.15.0"
-pyupgrade = "^3.19.1"
-typeguard = "^4.4.2"
-pre-commit = "^4.2.0"
-pre-commit-hooks = "^5.0.0"
-pytest = "^8.3.5"
-pooch = "^1.8.2"
+[tool.hatch.build.targets.wheel]
+include = ["src/kilroy"]
+
+[tool.hatch.build.targets.wheel.sources]
+"src/kilroy" = "kilroy"
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
