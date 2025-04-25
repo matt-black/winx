@@ -10,15 +10,7 @@ import jax.numpy as jnp
 from jax.tree_util import Partial
 from jaxtyping import Array
 
-from .filter import filter_window
-
-__all__ = [
-    "generic_filter",
-    "median_filter",
-    "percentile_filter",
-    "rank_filter",
-    "uniform_filter",
-]
+from ..filter import filter_window
 
 
 def generic_filter(
@@ -31,7 +23,7 @@ def generic_filter(
     origin: int | Sequence[int] = 0,
     axes: Optional[int | Sequence[int]] = None,
 ) -> Array:
-    """generic_filter Calculate a multidimensional filter using the given function.
+    """Calculate a multidimensional filter using the given function.
 
     At each element of the input array, a window is generated, centered around that element, and the function is evaluated on that window.
 
@@ -59,21 +51,37 @@ def generic_filter(
     stride = [
         1,
     ] * len(x.shape)
-    return filter_window(
-        x,
-        fun,
-        size,
-        footprint,
-        "same",
-        mode,
-        cval,
-        origin,
-        axes,
-        stride,
-        None,
-        None,
-        None,
-    )
+    if axes is None:
+        return filter_window(
+            x,
+            fun,
+            size,
+            footprint,
+            "same",
+            mode,
+            cval,
+            origin,
+            stride,
+            None,
+            None,
+            None,
+        )
+    else:
+        raise NotImplementedError("to finish")
+        # pfun = Partial(
+        #     filter_window,
+        #     fun=fun,
+        #     size=size,
+        #     footprint=footprint,
+        #     padding="same",
+        #     mode=mode,
+        #     cval=cval,
+        #     origin=origin,
+        #     window_strides=stride,
+        #     base_dilation=None,
+        #     window_dilation=None,
+        #     batch_size=None,
+        # )
 
 
 def median_filter(
@@ -85,7 +93,7 @@ def median_filter(
     origin: int | Sequence[int] = 0,
     axes: Optional[int | Sequence[int]] = None,
 ) -> Array:
-    """median_filter Compute a multidimensional median filter.
+    """Compute a multidimensional median filter.
 
     Args:
         x (Array): The input array.
@@ -121,7 +129,7 @@ def percentile_filter(
     origin: int | Sequence[int] = 0,
     axes: Optional[int | Sequence[int]] = None,
 ) -> Array:
-    """percentile_filter Compute a multidimensional percentile filter.
+    """Compute a multidimensional percentile filter.
 
     Args:
         x (Array): The input array.
@@ -163,7 +171,7 @@ def rank_filter(
     origin: int | Sequence[int] = 0,
     axes: Optional[int | Sequence[int]] = None,
 ) -> Array:
-    """rank_filter Compute a multidimensional rank filter.
+    """Compute a multidimensional rank filter.
 
     Rank filtering takes a window of values, flattens the values, sorts them, and then selects the `rank`th element in the sorted array.
 
@@ -201,7 +209,7 @@ def uniform_filter(
     origin: int | Sequence[int] = 0,
     axes: Optional[int | Sequence[int]] = None,
 ) -> Array:
-    """uniform_filter Compute a multidimensional uniform (AKA "mean") filter.
+    """Compute a multidimensional uniform (AKA "mean") filter.
 
     Args:
         x (Array): The input array.
