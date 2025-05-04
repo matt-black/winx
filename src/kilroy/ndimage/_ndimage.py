@@ -39,8 +39,6 @@ def generic_filter(
 
     Raises:
         ValueError: If ``size`` is specified as a sequence and the number of elements is not the same as the number of dimensions.
-        ValueError: If any of the dimensions in ``size`` are even.
-        NotImplementedError: If ``axes`` is not ``None``.
 
     Returns:
         Array: The filtered array.
@@ -67,21 +65,39 @@ def generic_filter(
             None,
         )
     else:
-        raise NotImplementedError("to finish")
-        # pfun = Partial(
-        #     filter_window,
-        #     fun=fun,
-        #     size=size,
-        #     footprint=footprint,
-        #     padding="same",
-        #     mode=mode,
-        #     cval=cval,
-        #     origin=origin,
-        #     window_strides=stride,
-        #     base_dilation=None,
-        #     window_dilation=None,
-        #     batch_size=None,
-        # )
+        all_ax = list(range(len(x.shape)))
+        map_ax = [a for a in all_ax if a not in axes]
+        vmap_ax, rest_vmap_ax = map_ax[0], map_ax[1:]
+        if len(rest_vmap_ax) == 0:
+            pfun = Partial(
+                filter_window,
+                fun=fun,
+                size=size,
+                footprint=footprint,
+                padding="same",
+                mode=mode,
+                cval=cval,
+                origin=origin,
+                window_strides=stride,
+                base_dilation=None,
+                window_dilation=None,
+                batch_size=None,
+            )
+            return jax.vmap(pfun, vmap_ax, vmap_ax)(x)
+        else:
+            new_ax = [(a if a < vmap_ax else a - 1) for a in axes]
+            print([vmap_ax, new_ax])
+            pfun = Partial(
+                generic_filter,
+                fun=fun,
+                size=size,
+                footprint=footprint,
+                mode=mode,
+                cval=cval,
+                origin=origin,
+                axes=new_ax,
+            )
+            return jax.vmap(pfun, vmap_ax, vmap_ax)(x)
 
 
 def median_filter(
@@ -233,3 +249,29 @@ def uniform_filter(
         origin,
         axes,
     )
+
+
+def variance(
+    x: Array,
+    size: int | Sequence[int],
+    footprint: Optional[Array] = None,
+    mode: str = "constant",
+    cval: Number = 0,
+    origin: int | Sequence[int] = 0,
+    axes: Optional[int | Sequence[int]] = None,
+) -> Array:
+    """Compute a multidimensional variance filter.
+
+    Args:
+        x (Array): The input array.
+        size (int | Sequence[int]): Shape that is taken from the input array at every element position to define the input to the filter function. If an integer, a square (cubic, etc.) window with that size in each dimension will be used.
+        footprint (Array, optional): A boolean array that delineates a window as well as which of the elements in that window gets passed to the filter function. If this is used, the values selected by the footprint are passed to ``fun`` as a 1-dimensional array. When ``footprint`` is given, ``size`` is ignored.
+        mode (str, optional): Determines how the input array will be padded beyond its boundaries. Defaults to 'constant'. For valid values, see ``jax.numpy.pad``.
+        cval (Number, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
+        origin (int | Sequence[int], optional): Controls the placement of the filter on the input's elements. A value of 0 (the default) centers the filter over the pixel. Positive values shift the filter to the left. Negative values shift the filter to the right.
+        axes (int | Sequence[int], optional): Axes of input array to filter along. If ``None``, the input is filtered along all axes.
+
+    Returns:
+        Array: Variance-filtered array.
+    """
+    return generic_filter(x, jnp.var, size, footprint, mode, cval, origin, axes)
