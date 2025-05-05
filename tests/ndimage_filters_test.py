@@ -9,7 +9,12 @@ from jaxtyping import Array
 from scipy import ndimage as ndi
 from scipy.datasets import ascent
 
-from kilroy.ndimage import median_filter, uniform_filter
+from kilroy.ndimage import (
+    maximum_filter,
+    median_filter,
+    minimum_filter,
+    uniform_filter,
+)
 
 jax.config.update("jax_platform_name", "cpu")
 
@@ -29,6 +34,20 @@ def window_identity(x: Array) -> Array:
 def test_median_same():
     sc = ndi.median_filter(_a, 3, None, None, "constant", 0)
     my = median_filter(_a, 3, None, "constant", 0)
+    my = numpy.asarray(my)
+    assert numpy.allclose(sc, my)
+
+
+def test_maximum_same():
+    sc = ndi.maximum_filter(_a, 3, None, None, "constant", 0)
+    my = maximum_filter(_a, 3, None, "constant", 0)
+    my = numpy.asarray(my)
+    assert numpy.allclose(sc, my)
+
+
+def test_minimum_same():
+    sc = ndi.minimum_filter(_a, 3, None, None, "constant", 0)
+    my = minimum_filter(_a, 3, None, "constant", 0)
     my = numpy.asarray(my)
     assert numpy.allclose(sc, my)
 

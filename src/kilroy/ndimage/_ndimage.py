@@ -100,6 +100,32 @@ def generic_filter(
             return jax.vmap(pfun, vmap_ax, vmap_ax)(x)
 
 
+def maximum_filter(
+    x: Array,
+    size: int | Sequence[int],
+    footprint: Optional[Array] = None,
+    mode: str = "constant",
+    cval: Number = 0,
+    origin: int | Sequence[int] = 0,
+    axes: Optional[int | Sequence[int]] = None,
+) -> Array:
+    """Compute a multidimensional maximum filter.
+
+    Args:
+        x (Array): The input array.
+        size (int | Sequence[int]): Shape that is taken from the input array at every element position to define the input to the filter function. If an integer, a square (cubic, etc.) window with that size in each dimension will be used.
+        footprint (Array, optional): A boolean array that delineates a window as well as which of the elements in that window gets passed to the filter function. If this is used, the values selected by the footprint are passed to ``fun`` as a 1-dimensional array. When ``footprint`` is given, ``size`` is ignored.
+        mode (str, optional): Determines how the input array will be padded beyond its boundaries. Defaults to 'constant'. For valid values, see ``jax.numpy.pad``.
+        cval (Number, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
+        origin (int | Sequence[int], optional): Controls the placement of the filter on the input's elements. A value of 0 (the default) centers the filter over the pixel. Positive values shift the filter to the left. Negative values shift the filter to the right.
+        axes (int | Sequence[int], optional): Axes of input array to filter along. If ``None``, the input is filtered along all axes.
+
+    Returns:
+        Array: Maximum-filtered array.
+    """
+    return generic_filter(x, jnp.max, size, footprint, mode, cval, origin, axes)
+
+
 def median_filter(
     x: Array,
     size: int | Sequence[int],
@@ -133,6 +159,32 @@ def median_filter(
         origin,
         axes,
     )
+
+
+def minimum_filter(
+    x: Array,
+    size: int | Sequence[int],
+    footprint: Optional[Array] = None,
+    mode: str = "constant",
+    cval: Number = 0,
+    origin: int | Sequence[int] = 0,
+    axes: Optional[int | Sequence[int]] = None,
+) -> Array:
+    """Compute a multidimensional minimum filter.
+
+    Args:
+        x (Array): The input array.
+        size (int | Sequence[int]): Shape that is taken from the input array at every element position to define the input to the filter function. If an integer, a square (cubic, etc.) window with that size in each dimension will be used.
+        footprint (Array, optional): A boolean array that delineates a window as well as which of the elements in that window gets passed to the filter function. If this is used, the values selected by the footprint are passed to ``fun`` as a 1-dimensional array. When ``footprint`` is given, ``size`` is ignored.
+        mode (str, optional): Determines how the input array will be padded beyond its boundaries. Defaults to 'constant'. For valid values, see ``jax.numpy.pad``.
+        cval (Number, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
+        origin (int | Sequence[int], optional): Controls the placement of the filter on the input's elements. A value of 0 (the default) centers the filter over the pixel. Positive values shift the filter to the left. Negative values shift the filter to the right.
+        axes (int | Sequence[int], optional): Axes of input array to filter along. If ``None``, the input is filtered along all axes.
+
+    Returns:
+        Array: Minimum-filtered array.
+    """
+    return generic_filter(x, jnp.min, size, footprint, mode, cval, origin, axes)
 
 
 def percentile_filter(

@@ -22,7 +22,19 @@ A `scipy.ndimage`-like API.
         show_source: false
         show_root_heading: true
 
+::: kilroy.ndimage.maximum_filter
+    handler: python
+    options:
+        show_source: false
+        show_root_heading: true
+
 ::: kilroy.ndimage.median_filter
+    handler: python
+    options:
+        show_source: false
+        show_root_heading: true
+
+::: kilroy.ndimage.minimum_filter
     handler: python
     options:
         show_source: false
