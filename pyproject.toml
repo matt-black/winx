@@ -1,5 +1,5 @@
 [project]
-name = "kilroy"
+name = "winx"
 version = "0.1.0"
 description = "N-dimensional filtering in JAX."
 authors = [{ name = "Matt Black", email = "matt.black7@gmail.com" }]
@@ -45,13 +45,13 @@ dev = [
 ]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/kilroy"]
+include = ["src/winx"]
 
 [tool.hatch.build.targets.wheel]
-include = ["src/kilroy"]
+include = ["src/winx"]
 
 [tool.hatch.build.targets.wheel.sources]
-"src/kilroy" = "kilroy"
+"src/winx" = "winx"
 
 [tool.isort]
 profile = "black"

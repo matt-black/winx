@@ -1,5 +1,5 @@
 from numbers import Number
-from typing import List, Tuple
+from typing import Tuple
 
 import jax.numpy as jnp
 import jax.scipy as jsp
@@ -112,7 +112,7 @@ def gaussian_filter1d(
 
 def gaussian_filter(
     x: Array,
-    sigma: float | List[float] | Num[Array, " b"],
+    sigma: float | Tuple[float, ...],
     order: int = 0,
     mode: str = "constant",
     cval: float = 0.0,
@@ -139,13 +139,16 @@ def gaussian_filter(
         Array
     """
     if axes is None:
-        axes = list(range(x.ndim))
+        axes = tuple(list(range(x.ndim)))
     if isinstance(sigma, Number):
-        sigma = [
-            sigma,
-        ] * len(axes)
+        sigma = tuple(
+            [
+                sigma,
+            ]
+            * len(axes)
+        )  # type: ignore
 
-    for ax, _sigma in zip(axes, sigma):
+    for ax, _sigma in zip(axes, sigma):  # type: ignore
         x = gaussian_filter1d(
             x,
             _sigma,

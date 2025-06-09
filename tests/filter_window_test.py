@@ -9,7 +9,7 @@ import jax.random as jr
 from jax.tree_util import Partial
 from jaxtyping import Array
 
-from kilroy.filter import filter_window
+from winx.filter import filter_window
 
 jax.config.update("jax_platform_name", "cpu")
 

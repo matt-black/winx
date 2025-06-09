@@ -3,7 +3,7 @@ import numpy
 from jaxtyping import Array
 from scipy.datasets import ascent
 
-from kilroy.ndimage import generic_filter
+from winx.ndimage import generic_filter
 
 jax.config.update("jax_platform_name", "cpu")
 

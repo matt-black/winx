@@ -4,13 +4,13 @@ Instead of ``conv`` and ``conv_general_dilated``, ``filt`` and ``filt_general_di
 """
 
 from collections.abc import Callable
-from numbers import Number
 from typing import Optional, Sequence, Tuple, Union
 
 import jax
 from jax.tree_util import Partial
 from jaxtyping import Array
 
+from ._types import Numeric
 from .filter import filter_window
 
 __all__ = ["filt", "filt_general_dilated"]
@@ -18,7 +18,7 @@ __all__ = ["filt", "filt_general_dilated"]
 
 def filt(
     x: Array,
-    fun: Callable[[Array], Union[Array, Number]],
+    fun: Callable[[Array], Union[Array, Numeric]],
     window_shape: Sequence[int],
     window_strides: Sequence[int],
     padding: str | Sequence[Tuple[int, int]],
@@ -27,7 +27,7 @@ def filt(
 
     Args:
         x (Array): A rank *n+2* dimensional input array.
-        fun (Callable[[Array], Union[Array, Number]]): Filtering function to be applied to each window.
+        fun (Callable[[Array], Union[Array, Numeric]]): Filtering function to be applied to each window.
         window_shape (Sequence[int]): Shape of the filtering window.
         window_strides (Sequence[int]): Inter-window strides.
         padding (str | Sequence[Tuple[int, int]]): Either the string 'same' or 'valid' or a sequence of tuples specifying padding applied to the left and right side of each dimension. Zero padding is used.
@@ -42,7 +42,7 @@ def filt(
 
 def filt_general_dilated(
     x: Array,
-    fun: Callable[[Array], Union[Array, Number]],
+    fun: Callable[[Array], Union[Array, Numeric]],
     window_shape: Sequence[int],
     window_strides: Sequence[int],
     padding: str | Sequence[Tuple[int, int]],
@@ -55,7 +55,7 @@ def filt_general_dilated(
 
     Args:
         x (Array): Rank *n+2* dimensional input array.
-        fun (Callable[[Array], Union[Array, Number]]): Filtering function to be applied to each window.
+        fun (Callable[[Array], Union[Array, Numeric]]): Filtering function to be applied to each window.
         window_shape (Sequence[int]): Shape of the window.
         window_strides (Sequence[int]): Inter-window strides.
         padding (str | Sequence[Tuple[int, int]]): Either the string 'same' or 'valid' or a sequence of tuples specifying padding applied to the left and right side of each dimension. Zero padding is used.
@@ -75,7 +75,7 @@ def filt_general_dilated(
         Right hand side dilation (`rhs_dilation`) is done, under the hood, by constructing a footprint similar to the mechanism used in `ndimage.generic_filter`. Thus, the filtering function will receive a 1D (sorted) array of values, not an ND array.
     """
     if len(x.shape) < 3:
-        raise ValueError("invalid number of dimensions for input array.")
+        raise ValueError("invalid Numeric of dimensions for input array.")
 
     n_batch = x.shape[0]
     n_batch_grps = n_batch // batch_group_count

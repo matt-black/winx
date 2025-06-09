@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 
-from kilroy.ndimage import binary_dilation, binary_erosion
+from winx.ndimage import binary_dilation, binary_erosion
 
 jax.config.update("jax_platform_name", "cpu")
 

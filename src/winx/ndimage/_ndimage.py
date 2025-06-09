@@ -2,7 +2,6 @@
 
 from collections.abc import Callable
 from functools import partial
-from numbers import Number
 from typing import Optional, Sequence, Union
 
 import jax
@@ -10,16 +9,17 @@ import jax.numpy as jnp
 from jax.tree_util import Partial
 from jaxtyping import Array
 
+from .._types import Numeric
 from ..filter import filter_window
 
 
 def generic_filter(
     x: Array,
-    fun: Callable[[Array], Union[Array, Number]],
+    fun: Callable[[Array], Array],
     size: int | Sequence[int],
     footprint: Optional[Array] = None,
     mode: str = "constant",
-    cval: Number = 0,
+    cval: Numeric = 0,
     origin: int | Sequence[int] = 0,
     axes: Optional[int | Sequence[int]] = None,
 ) -> Array:
@@ -29,16 +29,16 @@ def generic_filter(
 
     Args:
         x (Array): The input array.
-        fun (Callable[[Array],Union[Array,Number]]): Function to apply at each element.
+        fun (Callable[[Array],Union[Array,Numeric]]): Function to apply at each element.
         size (int | Sequence[int]): Shape that is taken from the input array at every element position to define the input to the filter function. If an integer, a square (cubic, etc.) window with that size in each dimension will be used.
         footprint (Array, optional): A boolean array that delineates a window as well as which of the elements in that window gets passed to the filter function. If this is used, the values selected by the footprint are passed to ``fun`` as a 1-dimensional array. When ``footprint`` is given, ``size`` is ignored.
         mode (str, optional): Determines how the input array will be padded beyond its boundaries. Defaults to 'constant'. For valid values, see ``jax.numpy.pad``.
-        cval (Number, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
+        cval (Numeric, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
         origin (int | Sequence[int], optional): Controls the placement of the filter on the input's elements. A value of 0 (the default) centers the filter over the pixel. Positive values shift the filter to the left. Negative values shift the filter to the right.
         axes (int | Sequence[int], optional): Axes of input array to filter along. If ``None``, the input is filtered along all axes.
 
     Raises:
-        ValueError: If ``size`` is specified as a sequence and the number of elements is not the same as the number of dimensions.
+        ValueError: If ``size`` is specified as a sequence and the Numeric of elements is not the same as the Numeric of dimensions.
 
     Returns:
         Array: The filtered array.
@@ -65,6 +65,8 @@ def generic_filter(
             None,
         )
     else:
+        if isinstance(axes, int):
+            axes = [axes]
         all_ax = list(range(len(x.shape)))
         map_ax = [a for a in all_ax if a not in axes]
         vmap_ax, rest_vmap_ax = map_ax[0], map_ax[1:]
@@ -105,7 +107,7 @@ def maximum_filter(
     size: int | Sequence[int],
     footprint: Optional[Array] = None,
     mode: str = "constant",
-    cval: Number = 0,
+    cval: Numeric = 0,
     origin: int | Sequence[int] = 0,
     axes: Optional[int | Sequence[int]] = None,
 ) -> Array:
@@ -116,7 +118,7 @@ def maximum_filter(
         size (int | Sequence[int]): Shape that is taken from the input array at every element position to define the input to the filter function. If an integer, a square (cubic, etc.) window with that size in each dimension will be used.
         footprint (Array, optional): A boolean array that delineates a window as well as which of the elements in that window gets passed to the filter function. If this is used, the values selected by the footprint are passed to ``fun`` as a 1-dimensional array. When ``footprint`` is given, ``size`` is ignored.
         mode (str, optional): Determines how the input array will be padded beyond its boundaries. Defaults to 'constant'. For valid values, see ``jax.numpy.pad``.
-        cval (Number, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
+        cval (Numeric, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
         origin (int | Sequence[int], optional): Controls the placement of the filter on the input's elements. A value of 0 (the default) centers the filter over the pixel. Positive values shift the filter to the left. Negative values shift the filter to the right.
         axes (int | Sequence[int], optional): Axes of input array to filter along. If ``None``, the input is filtered along all axes.
 
@@ -131,7 +133,7 @@ def median_filter(
     size: int | Sequence[int],
     footprint: Optional[Array] = None,
     mode: str = "constant",
-    cval: Number = 0,
+    cval: Numeric = 0,
     origin: int | Sequence[int] = 0,
     axes: Optional[int | Sequence[int]] = None,
 ) -> Array:
@@ -142,7 +144,7 @@ def median_filter(
         size (int | Sequence[int]): Shape that is taken from the input array at every element position to define the input to the filter function. If an integer, a square (cubic, etc.) window with that size in each dimension will be used.
         footprint (Array, optional): A boolean array that delineates a window as well as which of the elements in that window gets passed to the filter function. If this is used, the values selected by the footprint are passed to ``fun`` as a 1-dimensional array. When ``footprint`` is given, ``size`` is ignored.
         mode (str, optional): Determines how the input array will be padded beyond its boundaries. Defaults to 'constant'. For valid values, see ``jax.numpy.pad``.
-        cval (Number, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
+        cval (Numeric, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
         origin (int | Sequence[int], optional): Controls the placement of the filter on the input's elements. A value of 0 (the default) centers the filter over the pixel. Positive values shift the filter to the left. Negative values shift the filter to the right.
         axes (int | Sequence[int], optional): Axes of input array to filter along. If ``None``, the input is filtered along all axes.
 
@@ -166,7 +168,7 @@ def minimum_filter(
     size: int | Sequence[int],
     footprint: Optional[Array] = None,
     mode: str = "constant",
-    cval: Number = 0,
+    cval: Numeric = 0,
     origin: int | Sequence[int] = 0,
     axes: Optional[int | Sequence[int]] = None,
 ) -> Array:
@@ -177,7 +179,7 @@ def minimum_filter(
         size (int | Sequence[int]): Shape that is taken from the input array at every element position to define the input to the filter function. If an integer, a square (cubic, etc.) window with that size in each dimension will be used.
         footprint (Array, optional): A boolean array that delineates a window as well as which of the elements in that window gets passed to the filter function. If this is used, the values selected by the footprint are passed to ``fun`` as a 1-dimensional array. When ``footprint`` is given, ``size`` is ignored.
         mode (str, optional): Determines how the input array will be padded beyond its boundaries. Defaults to 'constant'. For valid values, see ``jax.numpy.pad``.
-        cval (Number, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
+        cval (Numeric, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
         origin (int | Sequence[int], optional): Controls the placement of the filter on the input's elements. A value of 0 (the default) centers the filter over the pixel. Positive values shift the filter to the left. Negative values shift the filter to the right.
         axes (int | Sequence[int], optional): Axes of input array to filter along. If ``None``, the input is filtered along all axes.
 
@@ -189,11 +191,11 @@ def minimum_filter(
 
 def percentile_filter(
     x: Array,
-    percentile: Union[Array, Number],
+    percentile: Union[Array, Numeric],
     size: int | Sequence[int],
     footprint: Optional[Array] = None,
     mode: str = "constant",
-    cval: Number = 0,
+    cval: Numeric = 0,
     origin: int | Sequence[int] = 0,
     axes: Optional[int | Sequence[int]] = None,
 ) -> Array:
@@ -201,11 +203,11 @@ def percentile_filter(
 
     Args:
         x (Array): The input array.
-        percentile (Union[Array, Number]): The percentile of the window to return at each position. Should contain integer or floating point values between 0 and 100.
+        percentile (Union[Array, Numeric]): The percentile of the window to return at each position. Should contain integer or floating point values between 0 and 100.
         size (int | Sequence[int]): Shape that is taken from the input array at every element position to define the input to the filter function. If an integer, a square (cubic, etc.) window with that size in each dimension will be used.
         footprint (Array, optional): A boolean array that delineates a window as well as which of the elements in that window gets passed to the filter function. If this is used, the values selected by the footprint are passed to ``fun`` as a 1-dimensional array. When ``footprint`` is given, ``size`` is ignored.
         mode (str, optional): Determines how the input array will be padded beyond its boundaries. Defaults to 'constant'. For valid values, see ``jax.numpy.pad``.
-        cval (Number, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
+        cval (Numeric, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
         origin (int | Sequence[int], optional): Controls the placement of the filter on the input's elements. A value of 0 (the default) centers the filter over the pixel. Positive values shift the filter to the left. Negative values shift the filter to the right.
         axes (int | Sequence[int], optional): Axes of input array to filter along. If ``None``, the input is filtered along all axes.
 
@@ -225,7 +227,7 @@ def percentile_filter(
 
 
 @partial(jax.jit, static_argnums=(1,))
-def _rank(rank: int, x: Array) -> Number:
+def _rank(rank: int, x: Array) -> Numeric:
     return jnp.sort(x)[rank]
 
 
@@ -235,7 +237,7 @@ def rank_filter(
     size: int | Sequence[int],
     footprint: Optional[Array] = None,
     mode: str = "constant",
-    cval: Number = 0,
+    cval: Numeric = 0,
     origin: int | Sequence[int] = 0,
     axes: Optional[int | Sequence[int]] = None,
 ) -> Array:
@@ -249,7 +251,7 @@ def rank_filter(
         size (int | Sequence[int]): Shape that is taken from the input array at every element position to define the input to the filter function. If an integer, a square (cubic, etc.) window with that size in each dimension will be used.
         footprint (Array, optional): A boolean array that delineates a window as well as which of the elements in that window gets passed to the filter function. If this is used, the values selected by the footprint are passed to ``fun`` as a 1-dimensional array. When ``footprint`` is given, ``size`` is ignored.
         mode (str, optional): Determines how the input array will be padded beyond its boundaries. Defaults to 'constant'. For valid values, see ``jax.numpy.pad``.
-        cval (Number, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
+        cval (Numeric, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
         origin (int | Sequence[int], optional): Controls the placement of the filter on the input's elements. A value of 0 (the default) centers the filter over the pixel. Positive values shift the filter to the left. Negative values shift the filter to the right.
         axes (int | Sequence[int], optional): Axes of input array to filter along. If ``None``, the input is filtered along all axes.
 
@@ -273,7 +275,7 @@ def uniform_filter(
     size: int | Sequence[int],
     footprint: Optional[Array] = None,
     mode: str = "constant",
-    cval: Number = 0,
+    cval: Numeric = 0,
     origin: int | Sequence[int] = 0,
     axes: Optional[int | Sequence[int]] = None,
 ) -> Array:
@@ -284,7 +286,7 @@ def uniform_filter(
         size (int | Sequence[int]): Shape that is taken from the input array at every element position to define the input to the filter function. If an integer, a square (cubic, etc.) window with that size in each dimension will be used.
         footprint (Array, optional): A boolean array that delineates a window as well as which of the elements in that window gets passed to the filter function. If this is used, the values selected by the footprint are passed to ``fun`` as a 1-dimensional array. When ``footprint`` is given, ``size`` is ignored.
         mode (str, optional): Determines how the input array will be padded beyond its boundaries. Defaults to 'constant'. For valid values, see ``jax.numpy.pad``.
-        cval (Number, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
+        cval (Numeric, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
         origin (int | Sequence[int], optional): Controls the placement of the filter on the input's elements. A value of 0 (the default) centers the filter over the pixel. Positive values shift the filter to the left. Negative values shift the filter to the right.
         axes (int | Sequence[int], optional): Axes of input array to filter along. If ``None``, the input is filtered along all axes.
 
@@ -308,7 +310,7 @@ def variance(
     size: int | Sequence[int],
     footprint: Optional[Array] = None,
     mode: str = "constant",
-    cval: Number = 0,
+    cval: Numeric = 0,
     origin: int | Sequence[int] = 0,
     axes: Optional[int | Sequence[int]] = None,
 ) -> Array:
@@ -319,7 +321,7 @@ def variance(
         size (int | Sequence[int]): Shape that is taken from the input array at every element position to define the input to the filter function. If an integer, a square (cubic, etc.) window with that size in each dimension will be used.
         footprint (Array, optional): A boolean array that delineates a window as well as which of the elements in that window gets passed to the filter function. If this is used, the values selected by the footprint are passed to ``fun`` as a 1-dimensional array. When ``footprint`` is given, ``size`` is ignored.
         mode (str, optional): Determines how the input array will be padded beyond its boundaries. Defaults to 'constant'. For valid values, see ``jax.numpy.pad``.
-        cval (Number, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
+        cval (Numeric, optional): Value to fill past edges of input if ``mode`` is 'constant'. Defaults to 0.
         origin (int | Sequence[int], optional): Controls the placement of the filter on the input's elements. A value of 0 (the default) centers the filter over the pixel. Positive values shift the filter to the left. Negative values shift the filter to the right.
         axes (int | Sequence[int], optional): Axes of input array to filter along. If ``None``, the input is filtered along all axes.
 

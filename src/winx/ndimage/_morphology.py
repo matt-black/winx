@@ -7,6 +7,7 @@ import jax
 import jax.numpy as jnp
 from jaxtyping import Array, Bool
 
+from .._types import Numeric
 from ._ndimage import generic_filter
 
 __all__ = ["binary_dilation", "binary_erosion"]
@@ -18,7 +19,7 @@ def _erode_or_dilate(
     structure: Optional[Array],
     op: str = "erode",
     iterations: int = 1,
-    border_value: bool = False,
+    border_value: Numeric = 0,
     origin: Union[int, Sequence[int]] = 0,
     axes: Optional[int | Sequence[int]] = None,
 ) -> Bool[Array, "..."]:
@@ -41,7 +42,7 @@ def _erode_or_dilate(
                 axes,
             )
 
-        val, _ = jax.lax.scan(scan_fun, x, None, iterations)
+        val, _ = jax.lax.scan(scan_fun, x, None, iterations)  # type: ignore
         return val
 
 
@@ -58,7 +59,7 @@ def binary_erosion(
     Args:
         x (Bool[Array, &quot;...&quot;]): Input array.
         structure (Optional[Array]): Structuring element. If `None`, a 3x3 array of 1's is used.
-        iterations (int, optional): Number of times to repeat the erosion. Defaults to 1.
+        iterations (int, optional): Numeric of times to repeat the erosion. Defaults to 1.
         border_value (bool, optional): Value at the border when padding. Defaults to False.
         origin (Union[int, Sequence[int]], optional): Placement of the filter. Defaults to 0.
         axes (Optional[int  |  Sequence[int]], optional): The axes over which to apply the filter. Defaults to None.
@@ -84,7 +85,7 @@ def binary_dilation(
     Args:
         x (Bool[Array, &quot;...&quot;]): Input array.
         structure (Optional[Array]): Structuring element. If `None`, a 3x3 array of 1's is used.
-        iterations (int, optional): Number of times to repeat the dilation. Defaults to 1.
+        iterations (int, optional): Numeric of times to repeat the dilation. Defaults to 1.
         border_value (bool, optional): Value at the border when padding. Defaults to False.
         origin (Union[int, Sequence[int]], optional): Placement of the filter. Defaults to 0.
         axes (Optional[int  |  Sequence[int]], optional): The axes over which to apply the filter. Defaults to None.
@@ -95,3 +96,51 @@ def binary_dilation(
     return _erode_or_dilate(
         x, structure, "dilate", iterations, border_value, origin, axes
     )
+
+
+def binary_closing(
+    x: Bool[Array, "..."],
+    structure: Optional[Array],
+    iterations: int = 1,
+    border_value: bool = False,
+    origin: Union[int, Sequence[int]] = 0,
+    axes: Optional[int | Sequence[int]] = None,
+) -> Bool[Array, "..."]:
+    closed = binary_erosion(
+        binary_dilation(x, structure, 1, border_value, origin, axes),
+        structure,
+        1,
+        border_value,
+        origin,
+        axes,
+    )
+    if iterations == 1:
+        return closed
+    else:
+        return binary_closing(
+            closed, structure, iterations - 1, border_value, origin, axes
+        )
+
+
+def binary_opening(
+    x: Bool[Array, "..."],
+    structure: Optional[Array],
+    iterations: int = 1,
+    border_value: bool = False,
+    origin: Union[int, Sequence[int]] = 0,
+    axes: Optional[int | Sequence[int]] = None,
+) -> Bool[Array, "..."]:
+    opened = binary_dilation(
+        binary_erosion(x, structure, 1, border_value, origin, axes),
+        structure,
+        1,
+        border_value,
+        origin,
+        axes,
+    )
+    if iterations <= 1:
+        return opened
+    else:
+        return binary_opening(
+            opened, structure, iterations - 1, border_value, origin, axes
+        )

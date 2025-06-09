@@ -9,7 +9,7 @@ from jaxtyping import Array
 from scipy import ndimage as ndi
 from scipy.datasets import ascent
 
-from kilroy.ndimage import (
+from winx.ndimage import (
     maximum_filter,
     median_filter,
     minimum_filter,

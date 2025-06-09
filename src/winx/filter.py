@@ -5,25 +5,26 @@ Implements a single function, `filter_window` that does window-based filtering. 
 
 from collections.abc import Callable
 from functools import partial
-from numbers import Number
-from typing import Optional, Sequence, Union
+from typing import Optional, Sequence
 
 import jax
 import jax.numpy as jnp
 from jax.tree_util import Partial
 from jaxtyping import Array, Bool, Int, Num
 
+from ._types import Numeric
+
 __all__ = ["filter_window"]
 
 
 def filter_window(
     x: Array,
-    fun: Callable[[Array], Union[Array, Number]],
+    fun: Callable[[Array], Array],
     size: int | Sequence[int],
     footprint: Optional[Array] = None,
     padding: str = "same",
     mode: str = "constant",
-    cval: Number = 0,
+    cval: Numeric = 0,
     origin: int | Sequence[int] = 0,
     window_strides: Optional[Sequence[int]] = None,
     base_dilation: Optional[Sequence[int]] = None,
@@ -101,8 +102,8 @@ def filter_window(
     extract_window = lcls["extract_window"]
     # pad the input array according to the padding argument
     if padding == "same":
-        padding = tuple((r, r - 1 * (r % 2 == 0)) for r in window_radii)
-        x = jnp.pad(x, padding, mode=mode, constant_values=cval)
+        pad_tup = tuple((r, r - 1 * (r % 2 == 0)) for r in window_radii)
+        x = jnp.pad(x, pad_tup, mode=mode, constant_values=cval)
     else:  # padding is assumed 'valid'
         pass
     out_shape = [
@@ -172,7 +173,7 @@ def filter_window(
 
     # compose the input function with this `get_window` function so that we can
     # vmap over coordinates instead of windows, themselves
-    def compose_fun(coord: Int[Array, " {n_dim}"]) -> Union[Array, Number]:
+    def compose_fun(coord: Int[Array, " {n_dim}"]) -> Array:
         return fun(get_window(coord))
 
     if batch_size is None:

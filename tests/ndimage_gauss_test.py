@@ -3,7 +3,7 @@ import numpy
 import scipy.ndimage as ndi
 from scipy.datasets import ascent
 
-from kilroy.ndimage import gaussian_filter, gaussian_filter1d
+from winx.ndimage import gaussian_filter, gaussian_filter1d
 
 jax.config.update("jax_platform_name", "cpu")
 
