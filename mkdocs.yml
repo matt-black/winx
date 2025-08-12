@@ -15,3 +15,4 @@ plugins:
           python:
               options:
                   show_source: false
+              paths: [src]
