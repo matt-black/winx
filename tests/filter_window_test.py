@@ -14,7 +14,7 @@ from winx.filter import filter_window
 jax.config.update("jax_platform_name", "cpu")
 
 
-def identity(x: Array) -> float:
+def identity(x: Array) -> Array:
     r, c = x.shape[0] // 2, x.shape[1] // 2
     return x[r, c]
 

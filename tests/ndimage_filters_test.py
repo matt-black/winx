@@ -4,6 +4,7 @@ tests that our implementations of the filter return the same results as those gi
 """
 
 import jax
+import jax.numpy as jnp
 import numpy
 from jaxtyping import Array
 from scipy import ndimage as ndi
@@ -22,7 +23,7 @@ jax.config.update("jax_platform_name", "cpu")
 _a = ascent().astype(numpy.float32)
 
 
-def identity(x: Array) -> float:
+def identity(x: Array) -> Array:
     r, c = x.shape[0] // 2, x.shape[1] // 2
     return x[r, c]
 
@@ -33,21 +34,21 @@ def window_identity(x: Array) -> Array:
 
 def test_median_same():
     sc = ndi.median_filter(_a, 3, None, None, "constant", 0)
-    my = median_filter(_a, 3, None, "constant", 0)
+    my = median_filter(jnp.asarray(_a), 3, None, "constant", 0)
     my = numpy.asarray(my)
     assert numpy.allclose(sc, my)
 
 
 def test_maximum_same():
     sc = ndi.maximum_filter(_a, 3, None, None, "constant", 0)
-    my = maximum_filter(_a, 3, None, "constant", 0)
+    my = maximum_filter(jnp.asarray(_a), 3, None, "constant", 0)
     my = numpy.asarray(my)
     assert numpy.allclose(sc, my)
 
 
 def test_minimum_same():
     sc = ndi.minimum_filter(_a, 3, None, None, "constant", 0)
-    my = minimum_filter(_a, 3, None, "constant", 0)
+    my = minimum_filter(jnp.asarray(_a), 3, None, "constant", 0)
     my = numpy.asarray(my)
     assert numpy.allclose(sc, my)
 
@@ -68,6 +69,6 @@ def test_minimum_same():
 
 def test_uniform_same():
     sc = ndi.uniform_filter(_a, 3, None, "constant", 0)
-    my = uniform_filter(_a, 3, None, "constant", 0)
+    my = uniform_filter(jnp.asarray(_a), 3, None, "constant", 0)
     my = numpy.asarray(my)
     assert numpy.allclose(sc, my)
