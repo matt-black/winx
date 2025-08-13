@@ -18,26 +18,26 @@ _b = _b.astype(bool)
 
 
 def test_binary_dilation():
-    d = binary_dilation(_b, None, border_value=True)
+    d = binary_dilation(_b, 3, None, border_value=True)
     assert jnp.all(d)
 
 
 def test_binary_erosion():
-    e = binary_erosion(_b, None, border_value=False)
+    e = binary_erosion(_b, 3, None, border_value=False)
     assert jnp.all(jnp.logical_not(e))
 
 
 def test_grey_dilation():
     x = jnp.array([[5, 2, 3], [7, 1, 4], [0, 8, 5]])
     res = jnp.array([[7, 7, 4], [8, 8, 8], [8, 8, 8]])
-    y = grey_dilation(x, None, 1, 0, 0, None)
+    y = grey_dilation(x, 3, None, 1, 0, 0, None)
     assert jnp.array_equal(y, res)
 
 
 def test_grey_erosion():
     x = jnp.array([[5, 2, 3], [7, 1, 4], [0, 8, 5]])
     res = jnp.array([[1, 1, 1], [0, 0, 1], [0, 0, 1]])
-    y = grey_erosion(x, None, 1, 10, 0, None)
+    y = grey_erosion(x, 3, None, 1, 10, 0, None)
     assert jnp.array_equal(y, res)
 
 

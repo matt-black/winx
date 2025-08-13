@@ -24,10 +24,11 @@ __all__ = [
 ]
 
 
-@partial(jax.jit, static_argnums=(2, 3, 4, 5, 6))
+@partial(jax.jit, static_argnums=(1, 3, 4, 5, 6))
 def _erode_or_dilate_binary(
     x: Bool[Array, "..."],
-    structure: Optional[Array],
+    size: int | Sequence[int],
+    structure: Array | None = None,
     op: str = "erode",
     iterations: int = 1,
     border_value: Numeric = 0,
@@ -37,7 +38,14 @@ def _erode_or_dilate_binary(
     window_op = jnp.all if op == "erode" else jnp.any
     if iterations == 1:
         return generic_filter(
-            x, window_op, 3, structure, "constant", border_value, origin, axes
+            x,
+            window_op,
+            size,
+            structure,
+            "constant",
+            border_value,
+            origin,
+            axes,
         )
     else:
 
@@ -45,7 +53,7 @@ def _erode_or_dilate_binary(
             return generic_filter(
                 y,
                 window_op,
-                3,
+                size,
                 structure,
                 "constant",
                 border_value,
@@ -59,7 +67,8 @@ def _erode_or_dilate_binary(
 
 def binary_erosion(
     x: Bool[Array, "..."],
-    structure: Optional[Array],
+    size: int | Sequence[int],
+    structure: Array | None = None,
     iterations: int = 1,
     border_value: bool = False,
     origin: Union[int, Sequence[int]] = 0,
@@ -69,7 +78,8 @@ def binary_erosion(
 
     Args:
         x (Bool[Array, "..."]): Input array.
-        structure (Optional[Array]): Structuring element. If `None`, a 3x3 array of 1's is used.
+        size (int | Sequence[int]): Shape of the array of ones that will be used as a structuring element.
+        structure (Optional[Array]): Structuring element. If `None`, the argument from `size` is used.
         iterations (int, optional): Numeric of times to repeat the erosion. Defaults to 1.
         border_value (bool, optional): Value at the border when padding. Defaults to False.
         origin (Union[int, Sequence[int]], optional): Placement of the filter. Defaults to 0.
@@ -79,13 +89,14 @@ def binary_erosion(
         Bool[Array]: Erosion of the input.
     """
     return _erode_or_dilate_binary(
-        x, structure, "erode", iterations, border_value, origin, axes
+        x, size, structure, "erode", iterations, border_value, origin, axes
     )
 
 
 def binary_dilation(
     x: Bool[Array, "..."],
-    structure: Optional[Array],
+    size: int | Sequence[int],
+    structure: Array | None = None,
     iterations: int = 1,
     border_value: bool = False,
     origin: Union[int, Sequence[int]] = 0,
@@ -95,7 +106,8 @@ def binary_dilation(
 
     Args:
         x (Bool[Array, "..."]): Input array.
-        structure (Optional[Array]): Structuring element. If `None`, a 3x3 array of 1's is used.
+        size (int | Sequence[int]): Shape of the array of ones that will be used as a structuring element.
+        structure (Optional[Array]): Structuring element. If `None`, the argument from `size` is used.
         iterations (int, optional): Numeric of times to repeat the dilation. Defaults to 1.
         border_value (bool, optional): Value at the border when padding. Defaults to False.
         origin (Union[int, Sequence[int]], optional): Placement of the filter. Defaults to 0.
@@ -105,13 +117,14 @@ def binary_dilation(
         Bool[Array]: Dilation of the input.
     """
     return _erode_or_dilate_binary(
-        x, structure, "dilate", iterations, border_value, origin, axes
+        x, size, structure, "dilate", iterations, border_value, origin, axes
     )
 
 
 def binary_closing(
     x: Bool[Array, "..."],
-    structure: Optional[Array],
+    size: int | Sequence[int],
+    structure: Array | None = None,
     iterations: int = 1,
     border_value: bool = False,
     origin: Union[int, Sequence[int]] = 0,
@@ -123,7 +136,8 @@ def binary_closing(
 
     Args:
         x (Bool[Array, "..."]): Input array.
-        structure (Optional[Array]): Structuring element. If `None`, a 3x3 array of 1's is used.
+        size (int | Sequence[int]): Shape of the array of ones that will be used as a structuring element.
+        structure (Optional[Array]): Structuring element. If `None`, the argument from `size` is used.
         iterations (int, optional): Numeric of times to repeat the dilation. Defaults to 1.
         border_value (bool, optional): Value at the border when padding. Defaults to False.
         origin (Union[int, Sequence[int]], optional): Placement of the filter. Defaults to 0.
@@ -133,7 +147,8 @@ def binary_closing(
         Bool[Array]: morphological closing of input
     """
     closed = binary_erosion(
-        binary_dilation(x, structure, 1, border_value, origin, axes),
+        binary_dilation(x, size, structure, 1, border_value, origin, axes),
+        size,
         structure,
         1,
         border_value,
@@ -144,13 +159,14 @@ def binary_closing(
         return closed
     else:
         return binary_closing(
-            closed, structure, iterations - 1, border_value, origin, axes
+            closed, size, structure, iterations - 1, border_value, origin, axes
         )
 
 
 def binary_opening(
     x: Bool[Array, "..."],
-    structure: Optional[Array],
+    size: int | Sequence[int],
+    structure: Array | None = None,
     iterations: int = 1,
     border_value: bool = False,
     origin: Union[int, Sequence[int]] = 0,
@@ -162,7 +178,8 @@ def binary_opening(
 
     Args:
         x (Bool[Array, "..."]): Input array.
-        structure (Optional[Array]): Structuring element. If `None`, a 3x3 array of 1's is used.
+        size (int | Sequence[int]): Shape of the array of ones that will be used as a structuring element.
+        structure (Optional[Array]): Structuring element. If `None`, the argument from `size` is used.
         iterations (int, optional): Numeric of times to repeat the dilation. Defaults to 1.
         border_value (bool, optional): Value at the border when padding. Defaults to False.
         origin (Union[int, Sequence[int]], optional): Placement of the filter. Defaults to 0.
@@ -172,7 +189,8 @@ def binary_opening(
         Bool[Array]: morphological closing of input
     """
     opened = binary_dilation(
-        binary_erosion(x, structure, 1, border_value, origin, axes),
+        binary_erosion(x, size, structure, 1, border_value, origin, axes),
+        size,
         structure,
         1,
         border_value,
@@ -183,7 +201,7 @@ def binary_opening(
         return opened
     else:
         return binary_opening(
-            opened, structure, iterations - 1, border_value, origin, axes
+            opened, size, structure, iterations - 1, border_value, origin, axes
         )
 
 
@@ -222,10 +240,11 @@ def binary_hit_or_miss(
     )
 
 
-@partial(jax.jit, static_argnums=(2, 3, 4, 5, 6))
+@partial(jax.jit, static_argnums=(1, 3, 4, 5, 6))
 def _erode_or_dilate_greyscale(
     x: Num[Array, "..."],
-    structure: Optional[Array],
+    size: int | Sequence[int],
+    structure: Array | None = None,
     op: str = "erode",
     iterations: int = 1,
     border_value: Numeric = 0,
@@ -235,7 +254,14 @@ def _erode_or_dilate_greyscale(
     window_op = jnp.min if op == "erode" else jnp.max
     if iterations == 1:
         return generic_filter(
-            x, window_op, 3, structure, "constant", border_value, origin, axes
+            x,
+            window_op,
+            size,
+            structure,
+            "constant",
+            border_value,
+            origin,
+            axes,
         )
     else:
 
@@ -243,7 +269,7 @@ def _erode_or_dilate_greyscale(
             return generic_filter(
                 y,
                 window_op,
-                3,
+                size,
                 structure,
                 "constant",
                 border_value,
@@ -257,7 +283,8 @@ def _erode_or_dilate_greyscale(
 
 def grey_erosion(
     x: Num[Array, "..."],
-    structure: Optional[Array],
+    size: int | Sequence[int],
+    structure: Array | None = None,
     iterations: int = 1,
     border_value: Numeric = 0,
     origin: Union[int, Sequence[int]] = 0,
@@ -267,7 +294,8 @@ def grey_erosion(
 
     Args:
         x (Num[Array, "..."]): Input array.
-        structure (Optional[Array]): Structuring element. If `None`, a 3x3 array of 1's is used.
+        size (int | Sequence[int]): Shape of the array of ones that will be used as a structuring element.
+        structure (Optional[Array]): Structuring element. If `None`, the argument from `size` is used.
         iterations (int, optional): Numeric of times to repeat the erosion. Defaults to 1.
         border_value (Numeric, optional): Value at the border when padding. Defaults to 0.
         origin (Union[int, Sequence[int]], optional): Placement of the filter. Defaults to 0.
@@ -277,13 +305,14 @@ def grey_erosion(
         Num[Array]: Erosion of the input.
     """
     return _erode_or_dilate_greyscale(
-        x, structure, "erode", iterations, border_value, origin, axes
+        x, size, structure, "erode", iterations, border_value, origin, axes
     )
 
 
 def grey_dilation(
     x: Num[Array, "..."],
-    structure: Optional[Array],
+    size: int | Sequence[int],
+    structure: Array | None = None,
     iterations: int = 1,
     border_value: Numeric = 0,
     origin: Union[int, Sequence[int]] = 0,
@@ -293,7 +322,8 @@ def grey_dilation(
 
     Args:
         x (Num[Array, "..."]): Input array.
-        structure (Optional[Array]): Structuring element. If `None`, a 3x3 array of 1's is used.
+        size (int | Sequence[int]): Shape of the array of ones that will be used as a structuring element.
+        structure (Optional[Array]): Structuring element. If `None`, the argument from `size` is used.
         iterations (int, optional): Numeric of times to repeat the dilation. Defaults to 1.
         border_value (Numeric, optional): Value at the border when padding. Defaults to 0.
         origin (Union[int, Sequence[int]], optional): Placement of the filter. Defaults to 0.
@@ -303,13 +333,14 @@ def grey_dilation(
         Num[Array]: Dilation of the input.
     """
     return _erode_or_dilate_greyscale(
-        x, structure, "dilate", iterations, border_value, origin, axes
+        x, size, structure, "dilate", iterations, border_value, origin, axes
     )
 
 
 def grey_closing(
     x: Num[Array, "..."],
-    structure: Optional[Array],
+    size: int | Sequence[int],
+    structure: Array | None = None,
     iterations: int = 1,
     border_value: Numeric = 0,
     origin: Union[int, Sequence[int]] = 0,
@@ -319,7 +350,8 @@ def grey_closing(
 
     Args:
         x (Num[Array, "..."]): Input array.
-        structure (Optional[Array]): Structuring element. If `None`, a 3x3 array of 1's is used.
+        size (int | Sequence[int]): Shape of the array of ones that will be used as a structuring element.
+        structure (Optional[Array]): Structuring element. If `None`, the argument from `size` is used.
         iterations (int, optional): Numeric of times to repeat the dilation. Defaults to 1.
         border_value (Numeric, optional): Value at the border when padding. Defaults to 0.
         origin (Union[int, Sequence[int]], optional): Placement of the filter. Defaults to 0.
@@ -329,7 +361,8 @@ def grey_closing(
         Num[Array]: Greyscale closing of the input.
     """
     closed = grey_erosion(
-        grey_dilation(x, structure, 1, border_value, origin, axes),
+        grey_dilation(x, size, structure, 1, border_value, origin, axes),
+        size,
         structure,
         1,
         border_value,
@@ -340,13 +373,14 @@ def grey_closing(
         return closed
     else:
         return grey_closing(
-            closed, structure, iterations - 1, border_value, origin, axes
+            closed, size, structure, iterations - 1, border_value, origin, axes
         )
 
 
 def grey_opening(
     x: Num[Array, "..."],
-    structure: Optional[Array],
+    size: int | Sequence[int],
+    structure: Array | None = None,
     iterations: int = 1,
     border_value: Numeric = 0,
     origin: Union[int, Sequence[int]] = 0,
@@ -356,7 +390,8 @@ def grey_opening(
 
     Args:
         x (Num[Array, "..."]): Input array.
-        structure (Optional[Array]): Structuring element. If `None`, a 3x3 array of 1's is used.
+        size (int | Sequence[int]): Shape of the array of ones that will be used as a structuring element.
+        structure (Optional[Array]): Structuring element. If `None`, the argument from `size` is used.
         iterations (int, optional): Numeric of times to repeat the dilation. Defaults to 1.
         border_value (Numeric, optional): Value at the border when padding. Defaults to 0.
         origin (Union[int, Sequence[int]], optional): Placement of the filter. Defaults to 0.
@@ -366,7 +401,8 @@ def grey_opening(
         Num[Array]: Greyscale opening of the input.
     """
     opened = grey_dilation(
-        grey_erosion(x, structure, 1, border_value, origin, axes),
+        grey_erosion(x, size, structure, 1, border_value, origin, axes),
+        size,
         structure,
         1,
         border_value,
@@ -377,13 +413,14 @@ def grey_opening(
         return opened
     else:
         return grey_opening(
-            opened, structure, iterations - 1, border_value, origin, axes
+            opened, size, structure, iterations - 1, border_value, origin, axes
         )
 
 
 def morphological_gradient(
     x: Num[Array, "..."],
-    structure: Optional[Array],
+    size: int | Sequence[int],
+    structure: Array | None = None,
     border_value: Numeric = 0,
     origin: Union[int, Sequence[int]] = 0,
     axes: Optional[int | Sequence[int]] = None,
@@ -392,7 +429,8 @@ def morphological_gradient(
 
     Args:
         x (Num[Array, "..."]): Input array.
-        structure (Optional[Array]): Structuring element. If `None`, a 3x3 array of 1's is used.
+        size (int | Sequence[int]): Shape of the array of ones that will be used as a structuring element.
+        structure (Optional[Array]): Structuring element. If `None`, the argument from `size` is used.
         border_value (Numeric, optional): Value at the border when padding. Defaults to 0.
         origin (Union[int, Sequence[int]], optional): Placement of the filter. Defaults to 0.
         axes (Optional[int  |  Sequence[int]], optional): The axes over which to apply the filter. Defaults to None.
@@ -401,6 +439,6 @@ def morphological_gradient(
         Num[Array]: difference between greyscale dilation and erosion.
     """
     return jnp.subtract(
-        grey_dilation(x, structure, 1, border_value, origin, axes),
-        grey_erosion(x, structure, 1, border_value, origin, axes),
+        grey_dilation(x, size, structure, 1, border_value, origin, axes),
+        grey_erosion(x, size, structure, 1, border_value, origin, axes),
     )
