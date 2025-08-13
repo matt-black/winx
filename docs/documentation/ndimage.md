@@ -59,8 +59,55 @@ Important differences with the `scipy.ndimage` API:
         show_source: false
         show_root_heading: true
 
-
 ::: winx.ndimage.binary_erosion
+    handler: python
+    options:
+        show_source: false
+        show_root_heading: true
+
+::: winx.ndimage.binary_opening
+    handler: python
+    options:
+        show_source: false
+        show_root_heading: true
+
+::: winx.ndimage.binary_closing
+    handler: python
+    options:
+        show_source: false
+        show_root_heading: true
+
+::: winx.ndimage.binary_dilation
+    handler: python
+    options:
+        show_source: false
+        show_root_heading: true
+
+::: winx.ndimage.binary_hit_or_miss
+    handler: python
+    options:
+        show_source: false
+        show_root_heading: true
+
+::: winx.ndimage.grey_erosion
+    handler: python
+    options:
+        show_source: false
+        show_root_heading: true
+
+::: winx.ndimage.grey_opening
+    handler: python
+    options:
+        show_source: false
+        show_root_heading: true
+
+::: winx.ndimage.grey_closing
+    handler: python
+    options:
+        show_source: false
+        show_root_heading: true
+
+::: winx.ndimage.morphological_gradient
     handler: python
     options:
         show_source: false
