@@ -39,6 +39,13 @@ def test_median_same():
     assert numpy.allclose(sc, my)
 
 
+def test_median_same_pad_not_constant():
+    sc = ndi.median_filter(_a, 3, None, None, mode="reflect")
+    my = median_filter(jnp.asarray(_a), 3, None, "symmetric")
+    my = numpy.asarray(my)
+    assert numpy.allclose(sc, my)
+
+
 def test_maximum_same():
     sc = ndi.maximum_filter(_a, 3, None, None, "constant", 0)
     my = maximum_filter(jnp.asarray(_a), 3, None, "constant", 0)

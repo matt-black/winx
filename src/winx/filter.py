@@ -103,7 +103,10 @@ def filter_window(
     # pad the input array according to the padding argument
     if padding == "same":
         pad_tup = tuple((r, r - 1 * (r % 2 == 0)) for r in window_radii)
-        x = jnp.pad(x, pad_tup, mode=mode, constant_values=cval)
+        if mode == "constant":
+            x = jnp.pad(x, pad_tup, mode=mode, constant_values=cval)
+        else:
+            x = jnp.pad(x, pad_tup, mode=mode)
     else:  # padding is assumed 'valid'
         pass
     out_shape = [
