@@ -48,6 +48,13 @@ repos:
         language: system
         types_or: [cython, pyi, python]
         args: ["--filter-files"]
+      - id: pytest
+        name: pytest
+        entry: pytest
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
       - id: pyupgrade
         name: pyupgrade
         description: Automatically upgrade syntax for newer versions.
