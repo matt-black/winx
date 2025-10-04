@@ -37,7 +37,7 @@ def filter_window(
 
     Args:
         x (Array): The input array.
-        fun (Callable[[Array],Union[Array,Number]]): Function to apply at each element.
+        fun (Callable[[Array],Array]): Function to apply at each element. Should take in a window and return a scalar.
         size (int | Sequence[int]): Shape that is taken from the input array at every element position to define the input to the filter function. If an integer, a square (cubic, etc.) window with that size in each dimension will be used.
         footprint (Array, optional): A boolean array that delineates a window as well as which of the elements in that window gets passed to the filter function. If this is used, the values selected by the footprint are passed to ``fun`` as a 1-dimensional array. When ``footprint`` is given, ``size`` is ignored.
         padding (str, optional): Either the strings 'same' or 'valid'. 'same' adds padding to produce the same output size as the input. 'valid' does no padding, so only elements where the window fits completely in the image will be evaluated. Defaults to 'same'.

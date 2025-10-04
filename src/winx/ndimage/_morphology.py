@@ -49,19 +49,24 @@ def _erode_or_dilate_binary(
         )
     else:
 
-        def scan_fun(y: Bool[Array, "..."], _) -> Bool[Array, "..."]:
-            return generic_filter(
-                y,
-                window_op,
-                size,
-                structure,
-                "constant",
-                border_value,
-                origin,
-                axes,
+        def scan_fun(
+            y: Bool[Array, "..."], _
+        ) -> tuple[Bool[Array, "..."], None]:
+            return (
+                generic_filter(
+                    y,
+                    window_op,
+                    size,
+                    structure,
+                    "constant",
+                    border_value,
+                    origin,
+                    axes,
+                ),
+                None,
             )
 
-        val, _ = jax.lax.scan(scan_fun, x, None, iterations)  # type: ignore
+        val, _ = jax.lax.scan(scan_fun, x, None, iterations)
         return val
 
 
@@ -146,21 +151,27 @@ def binary_closing(
     Returns:
         Bool[Array]: morphological closing of input
     """
-    closed = binary_erosion(
-        binary_dilation(x, size, structure, 1, border_value, origin, axes),
-        size,
-        structure,
-        1,
-        border_value,
-        origin,
-        axes,
-    )
-    if iterations == 1:
-        return closed
-    else:
-        return binary_closing(
-            closed, size, structure, iterations - 1, border_value, origin, axes
+
+    def scan_fun(
+        carry: Bool[Array, "..."], _
+    ) -> tuple[Bool[Array, "..."], None]:
+        return (
+            binary_erosion(
+                binary_dilation(
+                    carry, size, structure, 1, border_value, origin, axes
+                ),
+                size,
+                structure,
+                1,
+                border_value,
+                origin,
+                axes,
+            ),
+            None,
         )
+
+    closed, _ = jax.lax.scan(scan_fun, x, None, length=iterations)
+    return closed
 
 
 def binary_opening(
@@ -188,21 +199,27 @@ def binary_opening(
     Returns:
         Bool[Array]: morphological closing of input
     """
-    opened = binary_dilation(
-        binary_erosion(x, size, structure, 1, border_value, origin, axes),
-        size,
-        structure,
-        1,
-        border_value,
-        origin,
-        axes,
-    )
-    if iterations <= 1:
-        return opened
-    else:
-        return binary_opening(
-            opened, size, structure, iterations - 1, border_value, origin, axes
+
+    def scan_fun(
+        carry: Bool[Array, "..."], _
+    ) -> tuple[Bool[Array, "..."], None]:
+        return (
+            binary_dilation(
+                binary_erosion(
+                    carry, size, structure, 1, border_value, origin, axes
+                ),
+                size,
+                structure,
+                1,
+                border_value,
+                origin,
+                axes,
+            ),
+            None,
         )
+
+    opened, _ = jax.lax.scan(scan_fun, x, None, length=iterations)
+    return opened
 
 
 def binary_hit_or_miss(
@@ -265,19 +282,22 @@ def _erode_or_dilate_greyscale(
         )
     else:
 
-        def scan_fun(y: Num[Array, "..."], _) -> Num[Array, "..."]:
-            return generic_filter(
-                y,
-                window_op,
-                size,
-                structure,
-                "constant",
-                border_value,
-                origin,
-                axes,
+        def scan_fun(y: Num[Array, "..."], _) -> tuple[Num[Array, "..."], None]:
+            return (
+                generic_filter(
+                    y,
+                    window_op,
+                    size,
+                    structure,
+                    "constant",
+                    border_value,
+                    origin,
+                    axes,
+                ),
+                None,
             )
 
-        val, _ = jax.lax.scan(scan_fun, x, None, iterations)  # type: ignore
+        val, _ = jax.lax.scan(scan_fun, x, None, iterations)
         return val
 
 
@@ -360,21 +380,25 @@ def grey_closing(
     Returns:
         Num[Array]: Greyscale closing of the input.
     """
-    closed = grey_erosion(
-        grey_dilation(x, size, structure, 1, border_value, origin, axes),
-        size,
-        structure,
-        1,
-        border_value,
-        origin,
-        axes,
-    )
-    if iterations == 1:
-        return closed
-    else:
-        return grey_closing(
-            closed, size, structure, iterations - 1, border_value, origin, axes
+
+    def scan_fun(carry: Num[Array, "..."], _) -> tuple[Num[Array, "..."], None]:
+        return (
+            grey_erosion(
+                grey_dilation(
+                    carry, size, structure, 1, border_value, origin, axes
+                ),
+                size,
+                structure,
+                1,
+                border_value,
+                origin,
+                axes,
+            ),
+            None,
         )
+
+    closed, _ = jax.lax.scan(scan_fun, x, None, length=iterations)
+    return closed
 
 
 def grey_opening(
@@ -400,15 +424,24 @@ def grey_opening(
     Returns:
         Num[Array]: Greyscale opening of the input.
     """
-    opened = grey_dilation(
-        grey_erosion(x, size, structure, 1, border_value, origin, axes),
-        size,
-        structure,
-        1,
-        border_value,
-        origin,
-        axes,
-    )
+
+    def scan_fun(carry: Num[Array, "..."], _) -> tuple[Num[Array, "..."], None]:
+        return (
+            grey_dilation(
+                grey_erosion(
+                    carry, size, structure, 1, border_value, origin, axes
+                ),
+                size,
+                structure,
+                1,
+                border_value,
+                origin,
+                axes,
+            ),
+            None,
+        )
+
+    opened, _ = jax.lax.scan(scan_fun, x, None, length=iterations)
     if iterations <= 1:
         return opened
     else:

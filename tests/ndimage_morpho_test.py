@@ -22,6 +22,25 @@ def test_binary_dilation():
     assert jnp.all(d)
 
 
+def test_binary_dilation2():
+    a = jnp.zeros((7, 7), dtype=int)
+    a = a.at[3, 3].set(1)
+    a = a.astype(jnp.bool)
+    y = binary_dilation(a, 3, None, border_value=False)
+    res = jnp.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 1, 1, 0, 0],
+            [0, 0, 1, 1, 1, 0, 0],
+            [0, 0, 1, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ]
+    ).astype(jnp.bool)
+    assert jnp.array_equal(y, res)
+
+
 def test_binary_erosion():
     e = binary_erosion(_b, 3, None, border_value=False)
     assert jnp.all(jnp.logical_not(e))
@@ -34,11 +53,23 @@ def test_grey_dilation():
     assert jnp.array_equal(y, res)
 
 
+def test_grey_dilation2():
+    x = jnp.array([[5, 2, 3], [7, 1, 4], [0, 8, 5]])
+    y = grey_dilation(x, 3, None, 2, 0, 0, None)
+    assert jnp.array_equal(y, jnp.ones_like(x) * 8)
+
+
 def test_grey_erosion():
     x = jnp.array([[5, 2, 3], [7, 1, 4], [0, 8, 5]])
     res = jnp.array([[1, 1, 1], [0, 0, 1], [0, 0, 1]])
     y = grey_erosion(x, 3, None, 1, 10, 0, None)
     assert jnp.array_equal(y, res)
+
+
+def test_grey_erosion2():
+    x = jnp.array([[5, 2, 3], [7, 1, 4], [0, 8, 5]])
+    y = grey_erosion(x, 3, None, 2, 10, 0, None)
+    assert jnp.array_equal(y, jnp.zeros_like(x))
 
 
 def test_binary_hit_or_miss_origin0():
@@ -61,3 +92,28 @@ def test_binary_hit_or_miss_origin0():
         ]
     ).astype(jnp.bool)
     assert jnp.array_equal(y, res)
+
+
+def test_binary_dilation_two_iter():
+    a = jnp.zeros((7, 7), dtype=int)
+    a = a.at[3, 3].set(1)
+    d = binary_dilation(a.astype(bool), 3, iterations=2)
+    res = jnp.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 0],
+            [0, 1, 1, 1, 1, 1, 0],
+            [0, 1, 1, 1, 1, 1, 0],
+            [0, 1, 1, 1, 1, 1, 0],
+            [0, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ]
+    ).astype(jnp.bool)
+    assert jnp.array_equal(d, res)
+
+
+def test_binary_dilation_three_iter():
+    a = jnp.zeros((7, 7), dtype=int)
+    a = a.at[3, 3].set(1)
+    d = binary_dilation(a.astype(bool), 3, iterations=3)
+    assert jnp.array_equal(d, jnp.ones_like(a, dtype=bool))
